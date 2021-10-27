@@ -95,9 +95,10 @@ class Miters_Tile(Tile):
     # if the text contains "closed" set open to False
     def checkMitersStatus(self):
         # Get the latest tweet and print its text
-        latest_tweet = api.user_timeline("MITERS_door2")[0]
-        print(latest_tweet.text)
-        self.open = latest_tweet.text.find("open")
+        latest_tweets = api.user_timeline(screen_name="MITERS_door2", count=1)
+        t = latest_tweets[0].text
+        print(t)
+        self.open = "open" in t
 
     def draw(self, canvas, x, y):
         if self.background is not None:
@@ -255,7 +256,7 @@ def createTile():
         cutoff = max(0, min((t.tm_hour - 1) / 5 * 0.5, 0.5))
         if r < cutoff:
             return Tile(go_to_bed, background)
-    elif r < 0.3:
+    elif r < 0.1:  # 10% chance of Miters_Tile
         return Miters_Tile(miters_frames, background)
     else:
         i = random.randint(0, len(frames) - 1)
