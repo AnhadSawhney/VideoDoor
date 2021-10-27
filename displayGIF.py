@@ -11,7 +11,7 @@ import random
 
 WIDTH = 96
 HEIGHT = 192
-DELAY = 1 / 24
+DELAY = 1 / 18
 
 # seed random number generator with current time
 random.seed(time.time())
@@ -253,11 +253,14 @@ def createTile():
     background = backgrounds[int(r * len(backgrounds))]
 
     if t.tm_hour < 7:  # before 7 AM
-        # cutoff is a number increasing from 0 to 0.5 based on the number of hours after 1AM until 6AM
-        cutoff = max(0, min((t.tm_hour - 1) / 5 * 0.5, 0.5))
+        # cutoff is a number increasing from 0 to 0.25 based on the number of hours after 1AM until 6AM
+        cutoff = max(0, min((t.tm_hour - 1) / 5 * 0.25, 0.25))
         if r < cutoff:
-            return Tile(go_to_bed, background)
-    elif r < 0.1:  # 10% chance of Miters_Tile
+            return Tile([go_to_bed], background)
+
+    r = random.random()
+
+    if r < 0.05:  # 5% chance of Miters_Tile
         return Miters_Tile(miters_frames, background)
     else:
         i = random.randint(0, len(frames) - 1)
