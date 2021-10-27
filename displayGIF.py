@@ -11,6 +11,7 @@ import random
 
 WIDTH = 96
 HEIGHT = 192
+DELAY = 1 / 24
 
 # seed random number generator with current time
 random.seed(time.time())
@@ -298,6 +299,8 @@ startcoord = [0, 0]
 t = TileGrid()
 
 while keep_running:
+    # measure the time that the main loop took to complete
+    start = time.time()
     # update image here
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
     t.draw(image)
@@ -315,6 +318,9 @@ while keep_running:
 
         root.update()
 
-    time.sleep(1 / 20)
+    # measure the time that the main loop took to complete
+    dt = time.time() - start
+    if dt < DELAY:
+        time.sleep(DELAY - dt)
 
 root.mainloop()
