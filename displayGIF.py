@@ -3,18 +3,51 @@ try:
 except ImportError:
     from tkinter import *
 from PIL import Image, ImageTk
+import time
+import random
 
 import tweepy
 
-import time
-import random
+# import RPi.GPIO as GPIO
+import signal
 
 WIDTH = 96
 HEIGHT = 192
 DELAY = 1 / 18
+PIR_PIN = 17
+STOP_AFTER_DELAY = 30
 
 # seed random number generator with current time
 random.seed(time.time())
+
+# GPIO.setwarnings(False)
+# GPIO.setmode(GPIO.BOARD)
+# GPIO.setup(PIR_PIN, GPIO.IN)         #Read output from PIR motion sensor
+
+keep_running = True
+stop_after = time.time() + 30
+
+
+def signal_handler(sig, frame):
+    # GPIO.cleanup()
+    # sys.exit(0)
+    pass
+
+
+def PIR_Callback(channel):
+    global keep_running, stop_after
+    keep_running = True
+    if True:  # GPIO.input(PIR_PIN): # rising edge
+        stop_after = 0  # stay on permanently
+    else:  # falling edge
+        stop_after = time.time() + STOP_AFTER_DELAY  # stop after 30 seconds
+
+
+# GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
+
+PIR_Callback(0)  # REMOVE THIS CALL WHEN ITS TIME TO USE THE PIR SENSOR
+
+signal.signal(signal.SIGINT, signal_handler)
 
 # Configuration for the matrix
 # options = RGBMatrixOptions()
@@ -278,8 +311,6 @@ image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 root = Tk()
 root.title("Blue Ball Machine")
 
-keep_running = True
-
 
 def on_closing():
     root.destroy()
@@ -301,29 +332,35 @@ startcoord = [0, 0]
 
 t = TileGrid()
 
-while keep_running:
-    # measure the time that the main loop took to complete
-    start = time.time()
-    # update image here
-    image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    t.draw(image)
-    t.update()
 
-    # image.show()
+while True:
+    while keep_running:
+        # measure the time that the main loop took to complete
+        start = time.time()
+        # update image here
+        image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+        t.draw(image)
+        t.update()
 
-    # matrix.Clear()
-    # matrix.SetImage(image, n, n)
+        # image.show()
 
-    if keep_running:
-        i = ImageTk.PhotoImage(image)
-        lbl.configure(image=i)
-        lbl.image = i
+        # matrix.Clear()
+        # matrix.SetImage(image, n, n)
 
-        root.update()
+        if keep_running:
+            i = ImageTk.PhotoImage(image)
+            lbl.configure(image=i)
+            lbl.image = i
 
-    # measure the time that the main loop took to complete
-    dt = time.time() - start
-    if dt < DELAY:
-        time.sleep(DELAY - dt)
+            root.update()
+
+        # measure the time that the main loop took to complete
+        end = time.time()
+        dt = end - start
+        if dt < DELAY:
+            time.sleep(DELAY - dt)
+        if stop_after > 0 and end > stop_after:
+            keep_running = False
+
 
 root.mainloop()
