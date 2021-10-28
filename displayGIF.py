@@ -334,24 +334,23 @@ t = TileGrid()
 
 
 while True:
+    image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+    # matrix.Clear()
     while keep_running:
         # measure the time that the main loop took to complete
         start = time.time()
         # update image here
-        image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
         t.draw(image)
         t.update()
 
         # image.show()
 
-        # matrix.Clear()
-        # matrix.SetImage(image, n, n)
+        # matrix.SetImage(image)
 
         if keep_running:
             i = ImageTk.PhotoImage(image)
             lbl.configure(image=i)
             lbl.image = i
-
             root.update()
 
         # measure the time that the main loop took to complete
