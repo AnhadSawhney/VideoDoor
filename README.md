@@ -5,6 +5,15 @@ Procedurally generates new tiles and seamlessly animates them across the screen.
 
 Also generates custom tiles to check the open status of the MITERS makerspace and to tell people to go to bed.
 
+Python dependencies: (`pip install` these)
+`pillow` (PIL)
+`tweepy`
+`RGBMatrixEmulator` (when `EMULATE = True`)
+https://github.com/hzeller/rpi-rgb-led-matrix (when `EMULATE = False`)
+Tkinter/tk (when `TK_GUI = True`)
+`Rpi.GPIO` (when `GPIO = True`)
+
+
 For the twitter integration to work you must generate and add your own tokens and put them in `tokens.txt`.
 Sign up for a twitter developer account, make a new app and copy paste the tokens into a text file called `tokens.txt`.
 

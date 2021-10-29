@@ -1,62 +1,71 @@
-try:
-    from Tkinter import *
-except ImportError:
-    from tkinter import *
+TK_GUI = True
+GPIO = False
+EMULATE = True
+
+if TK_GUI:
+    try:
+        from Tkinter import *
+    except ImportError:
+        from tkinter import *
 from PIL import Image, ImageTk
 import time
 import random
 
 import tweepy
-
-# import RPi.GPIO as GPIO
 import signal
+
+if EMULATE:
+    from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
+else:
+    from rgbmatrix import RGBMatrix, RGBMatrixOptions
+
+if GPIO:
+    import RPi.GPIO as GPIO
+
+    PIR_PIN = 17
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(PIR_PIN, GPIO.IN)  # Read output from PIR motion sensor
+
+    def signal_handler(sig, frame):
+        GPIO.cleanup()
+        # sys.exit(0)
+        # pass
+
+    def PIR_Callback(channel):
+        global keep_running, stop_after
+        keep_running = True
+        if GPIO.input(PIR_PIN):  # rising edge
+            stop_after = 0  # stay on permanently
+        else:  # falling edge
+            stop_after = time.time() + STOP_AFTER_DELAY  # stop after 30 seconds
+
+    GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
+    signal.signal(signal.SIGINT, signal_handler)
 
 WIDTH = 96
 HEIGHT = 192
 DELAY = 1 / 18
-PIR_PIN = 17
 STOP_AFTER_DELAY = 30
 
 # seed random number generator with current time
 random.seed(time.time())
 
-# GPIO.setwarnings(False)
-# GPIO.setmode(GPIO.BOARD)
-# GPIO.setup(PIR_PIN, GPIO.IN)         #Read output from PIR motion sensor
-
 keep_running = True
-stop_after = time.time() + 30
-
-
-def signal_handler(sig, frame):
-    # GPIO.cleanup()
-    # sys.exit(0)
-    pass
-
-
-def PIR_Callback(channel):
-    global keep_running, stop_after
-    keep_running = True
-    if True:  # GPIO.input(PIR_PIN): # rising edge
-        stop_after = 0  # stay on permanently
-    else:  # falling edge
-        stop_after = time.time() + STOP_AFTER_DELAY  # stop after 30 seconds
-
-
-# GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
-
-PIR_Callback(0)  # REMOVE THIS CALL WHEN ITS TIME TO USE THE PIR SENSOR
-
-signal.signal(signal.SIGINT, signal_handler)
+if GPIO:
+    stop_after = time.time() + 30
+else:
+    stop_after = 0
 
 # Configuration for the matrix
-# options = RGBMatrixOptions()
-# options.rows = 32
-# options.chain_length = 3
-# options.parallel = 1
-# options.hardware_mapping = 'adafruit-hat'  # If you have an Adafruit HAT: 'adafruit-hat'
+options = RGBMatrixOptions()
+options.rows = 32
+options.chain_length = 9
+options.parallel = 1
+options.hardware_mapping = "adafruit-hat"  # If you have an Adafruit HAT: 'adafruit-hat'
+options.pixel_mapper_config = "Vmapper:Z"
 
-# matrix = RGBMatrix(options = options)
+matrix = RGBMatrix(options=options)
 
 # init twitter API
 # read consumer API key, API key secret, Access token, Access token secret from tokens.txt
@@ -82,13 +91,7 @@ except tweepy.TweepError as e:
 # print("Connected as @{}, you can start to tweet !".format(api.me().screen_name))
 # client_id = api.me().id
 
-# TODO:
-# Receive text messages?
-# Time, weather?
 
-# create a class tile
-# each tile has an array of pictures called frames
-# each tile has a draw function which pastes the frame at index animtimer onto the canvas image
 class Tile:
     def __init__(self, frames, background=None):
         self.frames = frames
@@ -161,31 +164,32 @@ class TileGrid:
                 createTile(),
             ],
         ]
+        self.startcoord = [0, 0]
 
     def draw(self, canvas):
         # go through all of the tiles in self.tiles and draw them on the canvas
         for x in range(2):
             for y in range(3):
                 self.tiles[x][y].draw(
-                    canvas, startcoord[0] + x * 100, startcoord[1] + y * 100
+                    canvas, self.startcoord[0] + x * 100, self.startcoord[1] + y * 100
                 )
 
     def update(self):
-        startcoord[0] -= 1
-        startcoord[1] -= 0.1
+        self.startcoord[0] -= 1
+        self.startcoord[1] -= 0.1
 
         for x in range(2):
             for y in range(3):
                 self.tiles[x][y].update()
 
-        if startcoord[0] <= -100:  # x is offscreen, shift everything left
-            startcoord[0] = 0
+        if self.startcoord[0] <= -100:  # x is offscreen, shift everything left
+            self.startcoord[0] = 0
             for y in range(3):
                 self.tiles[0][y] = self.tiles[1][y]
                 self.tiles[1][y] = createTile()
 
-        if startcoord[1] <= -100:  # y is offscreen, shift everything up
-            startcoord[1] = 0
+        if self.startcoord[1] <= -100:  # y is offscreen, shift everything up
+            self.startcoord[1] = 0
             for x in range(2):
                 self.tiles[x][0] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][2]
@@ -300,54 +304,48 @@ def createTile():
         return Tile(frames[i], background)
 
 
-# animtimer = 0
-# numframes = len(gif1frames[0])
-# print(numframes)
-# nummodules = len(frames)
-
 # this is the image that eventually gets drawn to the matrix
 image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 
-root = Tk()
-root.title("Blue Ball Machine")
+if TK_GUI:
+    root = Tk()
+    root.title("Blue Ball Machine")
 
+    def on_closing():
+        root.destroy()
+        root.quit()
+        global keep_running
+        keep_running = False
 
-def on_closing():
-    root.destroy()
-    root.quit()
-    global keep_running
-    keep_running = False
+    root.protocol("WM_DELETE_WINDOW", on_closing)
 
+    lbl = Label(root, image=ImageTk.PhotoImage(image))
+    lbl.pack()
 
-root.protocol("WM_DELETE_WINDOW", on_closing)
-
-lbl = Label(root, image=ImageTk.PhotoImage(image))
-lbl.pack()
-
-root.update()
-
-startcoord = [0, 0]
-
-# indices = [[0, 1, 2], [3, 4, 5]]
+    root.update()
 
 t = TileGrid()
 
-
 while True:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    # matrix.Clear()
+    matrixImage = Image.new("RGB", (WIDTH * 3, HEIGHT // 3), (0, 0, 0))
+    matrix.Clear()
     while keep_running:
         # measure the time that the main loop took to complete
         start = time.time()
-        # update image here
+
         t.draw(image)
         t.update()
 
         # image.show()
 
-        # matrix.SetImage(image)
+        matrixImage.paste(image, (0, 0))
+        matrixImage.paste(image, (WIDTH, -HEIGHT // 3))
+        matrixImage.paste(image, (WIDTH * 2, -2 * HEIGHT // 3))
 
-        if keep_running:
+        matrix.SetImage(matrixImage)
+
+        if TK_GUI and keep_running:
             i = ImageTk.PhotoImage(image)
             lbl.configure(image=i)
             lbl.image = i
@@ -360,6 +358,3 @@ while True:
             time.sleep(DELAY - dt)
         if stop_after > 0 and end > stop_after:
             keep_running = False
-
-
-root.mainloop()
