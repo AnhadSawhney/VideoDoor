@@ -1,8 +1,8 @@
 import sys
 
-TK_GUI = False
+TK_GUI = True
 GPIO = False
-USE_MATRIX = True
+USE_MATRIX = False
 EMULATE = False
 
 WIDTH = 96
@@ -10,7 +10,7 @@ HEIGHT = 192
 DELAY = 1 / 18
 STOP_AFTER_DELAY = 30
 MITERS_CHECK_DELAY_SEC = 5 * 60
-MOVEX = 0.5
+MOVEX = 0.3
 MOVEY = 0.1
 
 if TK_GUI:
@@ -49,7 +49,7 @@ if USE_MATRIX:
     # options.pixel_mapper_config = "V-mapper:Z"
     options.pwm_bits = 11
     options.pwm_dither_bits = 2
-    options.brightness = 25
+    options.brightness = 30
     options.gpio_slowdown = 2
     options.scan_mode = 1
     options.show_refresh_rate = False  # True
@@ -135,13 +135,12 @@ class Tile:
             self.animtimer = 0
 
     def draw(self, canvas, x, y):
+        location = (int(x), int(y))
         # paste the background onto the canvas at location x, y
         if self.background is not None:
-            canvas.paste(self.background, (int(x), int(y)))
+            canvas.paste(self.background, location)
         # paste the frame on top of the background
-        canvas.paste(
-            self.frames[self.animtimer], (int(x), int(y)), self.frames[self.animtimer]
-        )
+        canvas.paste(self.frames[self.animtimer], location, self.frames[self.animtimer])
 
 
 miters_status = False  # True = open, false = closed
@@ -198,15 +197,16 @@ class TileGrid:
                 createTile(),
             ],
         ]
-        self.startcoord = [0, 0]
 
     def draw(self, canvas):
         # go through all of the tiles in self.tiles and draw them on the canvas
-        for x in range(2):
-            for y in range(3):
-                self.tiles[x][y].draw(
-                    canvas, self.startcoord[0] + x * 100, self.startcoord[1] + y * 100
-                )
+        for y in range(3):
+            self.tiles[0][y].draw(
+                canvas, self.startcoord[0], self.startcoord[1] + y * 100
+            )
+            self.tiles[1][y].draw(
+                canvas, self.startcoord[0] + 100, self.startcoord[1] + y * 100
+            )
 
     def update(self):
         self.startcoord[0] += MOVEX
