@@ -2,9 +2,9 @@
 
 import sys
 
-TK_GUI = False
+TK_GUI = True
 GPIO = False
-USE_MATRIX = True
+USE_MATRIX = False
 EMULATE = False
 
 if TK_GUI:
@@ -16,7 +16,7 @@ if TK_GUI:
 from PIL import Image
 import time
 import random
-
+import threading
 import tweepy
 import signal
 
@@ -60,8 +60,6 @@ if GPIO:
 
     def signal_handler(sig, frame):
         GPIO.cleanup()
-        # sys.exit(0)
-        # pass
 
     def PIR_Callback(channel):
         global keep_running, stop_after
@@ -78,6 +76,7 @@ WIDTH = 96
 HEIGHT = 192
 DELAY = 1 / 18
 STOP_AFTER_DELAY = 30
+MITERS_CHECK_DELAY_SEC = 5 * 60
 
 # seed random number generator with current time
 random.seed(time.time())
@@ -141,28 +140,33 @@ class Tile:
         )
 
 
+miters_status = False  # True = open, false = closed
+# launch a thread to check the status of MITERS every five minutes
+def check_miters():
+    # print("attempting tweet check")
+    global miters_status
+    # Get the latest tweet and print its text
+    latest_tweets = api.user_timeline(screen_name="MITERS_door2", count=1)
+    t = latest_tweets[0].text
+    print(t)
+    miters_status = "open" in t
+    miters_thread = threading.Timer(MITERS_CHECK_DELAY_SEC, check_miters)
+    miters_thread.start()
+
+
+miters_thread = threading.Timer(0, check_miters)  # check first without delay
+miters_thread.start()
+
 # create a subclass of Tile called Miters_Tile
 # overload the draw method to draw frame[0] if self.open is True and frame[1] if self.open is False
 class Miters_Tile(Tile):
     def __init__(self, frames, background=None):
         Tile.__init__(self, frames, background)
-        self.checkMitersStatus()
-
-    # using the Tweepy library
-    # get the text of the latest tweet from @MITERS_door2
-    # if the text contains "open" set open to True
-    # if the text contains "closed" set open to False
-    def checkMitersStatus(self):
-        # Get the latest tweet and print its text
-        latest_tweets = api.user_timeline(screen_name="MITERS_door2", count=1)
-        t = latest_tweets[0].text
-        print(t)
-        self.open = "open" in t
 
     def draw(self, canvas, x, y):
         if self.background is not None:
             canvas.paste(self.background, (int(x), int(y)))
-        if self.open:
+        if miters_status:
             canvas.paste(self.frames[0], (int(x), int(y)), self.frames[0])
         else:
             canvas.paste(self.frames[1], (int(x), int(y)), self.frames[1])
@@ -358,15 +362,13 @@ def remapImage(source, dest):
 image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 
 if TK_GUI:
+    global root
     print("Initializing Tkinter")
     root = Tk()
     root.title("Blue Ball Machine")
 
     def on_closing():
-        root.destroy()
-        root.quit()
-        global keep_running
-        keep_running = False
+        stop()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -377,10 +379,29 @@ if TK_GUI:
 
 t = TileGrid()
 
+outer_loop = True
+
+
+def stop():
+    print("Shutting down")
+    if TK_GUI:
+        root.destroy()
+        root.quit()
+        global keep_running
+        keep_running = False
+    if GPIO:
+        signal_handler()
+
+    miters_thread.cancel()
+    global outer_loop
+    outer_loop = False
+    # sys.exit(0)
+
+
 print("Entering main loop")
-while True:
+while outer_loop:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    matrixImage = Image.new("RGB", (32, 32 * 18), (0, 0, 0))
+    matrixImage = Image.new("RGB", (32 * 18, 32), (0, 0, 0))
     if USE_MATRIX:
         matrix.Clear()
 
