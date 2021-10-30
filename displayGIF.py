@@ -420,6 +420,8 @@ def stop():
 
 # keyboard.on_press_key("esc", lambda _: stop())
 
+testImage = Image.open("test.png", "r")
+
 print("Entering main loop")
 while outer_loop:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
@@ -435,8 +437,8 @@ while outer_loop:
         t.update()
 
         # image.show()
-
-        remapImage(image, matrixImage)
+        remapImage(testImage, matrixImage)
+        # remapImage(image, matrixImage)
 
         if USE_MATRIX:
             double_buffer.SetImage(matrixImage)
