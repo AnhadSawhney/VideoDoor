@@ -2,10 +2,10 @@
 
 import sys
 
-TK_GUI = True
+TK_GUI = False
 GPIO = False
-USE_MATRIX = False
-EMULATE = True
+USE_MATRIX = True
+EMULATE = False
 
 if TK_GUI:
     try:
@@ -41,8 +41,9 @@ if USE_MATRIX:
     # options.pixel_mapper_config = "V-mapper:Z"
     options.pwm_bits = 7
     options.pwm_dither_bits = 2
-    options.brightness = 25
+    options.brightness = 30
     options.gpio_slowdown = 2
+    options.scan_mode = 1
 
     matrix = RGBMatrix(options=options)
 
