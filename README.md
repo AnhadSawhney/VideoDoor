@@ -23,6 +23,8 @@ Some_Folder
 └── rpi-rb-led-matrix
 ```
 
+Running:
+`python3 displayGIF.py`
 
 For the twitter integration to work you must generate and add your own tokens and put them in `tokens.txt`.
 Sign up for a twitter developer account, make a new app and copy paste the tokens into a text file called `tokens.txt`.

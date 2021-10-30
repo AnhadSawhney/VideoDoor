@@ -1,3 +1,5 @@
+# TODO: check MITERS status in a different thread
+
 import sys
 
 TK_GUI = True
@@ -25,6 +27,8 @@ if USE_MATRIX:
         sys.path.append("/home/rpi-rgb-led-matrix/bindings/python")
         from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
+    print("Initializing matrix options")
+
     # Configuration for the matrix
     options = RGBMatrixOptions()
     options.rows = 32
@@ -34,17 +38,18 @@ if USE_MATRIX:
     options.parallel = 1
     options.hardware_mapping = "adafruit-hat-pwm"
     # custom pixel mapper must be written
-    options.pixel_mapper_config = "Vmapper:Z"
+    # options.pixel_mapper_config = "V-mapper:Z"
     options.pwm_bits = 7
     options.pwm_dither_bits = 2
     options.brightness = 25
     options.gpio_slowdown = 2
-    options.limit_refresh_rate = 60
 
     matrix = RGBMatrix(options=options)
 
 if GPIO:
     import RPi.GPIO as GPIO
+
+    print("Initializing GPIO")
 
     PIR_PIN = 17
     GPIO.setwarnings(False)
@@ -82,6 +87,7 @@ else:
     stop_after = 0
 
 # init twitter API
+print("Initializing Twitter API")
 # read consumer API key, API key secret, Access token, Access token secret from tokens.txt
 with open("tokens.txt", "r") as f:
     lines = f.readlines()
@@ -280,13 +286,10 @@ def splitbackground(filename):
     return tiles
 
 
+print("Importing GIFs")
 gif1frames = importpicture("BlueBallMachine.gif")
-# print(len(gif1frames))
-# print(gif1frames)
 gif2frames = importpicture("BlueBallMachine2.gif")
-# print(len(gif2frames))
 gif3frames = importpicture("BlueBallMachine3.gif")
-# print(len(gif3frames))
 
 backgrounds = splitbackground("Background.png")
 
@@ -318,7 +321,7 @@ def createTile():
         return Tile(frames[i], background)
 
 
-# source is a PIL image WIDTH by HEIGHT, dest is a PIL image 32 by 1152 (32*18)
+# source is a PIL image WIDTH by HEIGHT, dest is a PIL image 32 by 576 (32*18)
 # split source into 32 by 32 chunks and paste each chunk sequentially into dest
 def remapImage(source, dest):
     # each element of the array is the filling order index. negative means rotate image 180
@@ -344,8 +347,10 @@ def remapImage(source, dest):
             box = (x * 32, y * 32, (x + 1) * 32, (y + 1) * 32)
             toadd = source.crop(box)
             if i < 0:
-                toadd = toadd.rotate(180)
+                toadd = toadd.rotate(90)
                 i = -i
+            else:
+                toadd = toadd.rotate(-90)
 
             dest.paste(source.crop(box), (i * 32, 0))
 
@@ -354,6 +359,7 @@ def remapImage(source, dest):
 image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 
 if TK_GUI:
+    print("Initializing Tkinter")
     root = Tk()
     root.title("Blue Ball Machine")
 
@@ -372,6 +378,7 @@ if TK_GUI:
 
 t = TileGrid()
 
+print("Entering main loop")
 while True:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
     matrixImage = Image.new("RGB", (WIDTH * 6, HEIGHT // 6), (0, 0, 0))
