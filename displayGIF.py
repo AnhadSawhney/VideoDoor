@@ -10,7 +10,7 @@ HEIGHT = 192
 DELAY = 1 / 18
 STOP_AFTER_DELAY = 30
 MITERS_CHECK_DELAY_SEC = 5 * 60
-MOVEX = 0.3
+MOVEX = 0.4
 MOVEY = 0.1
 
 if TK_GUI:
@@ -54,6 +54,7 @@ if USE_MATRIX:
     options.scan_mode = 1
     options.show_refresh_rate = False  # True
     options.pwm_lsb_nanoseconds = 50
+    options.limit_refresh_rate_hz = 90
 
     matrix = RGBMatrix(options=options)
     double_buffer = matrix.CreateFrameCanvas()
@@ -118,9 +119,8 @@ except tweepy.TweepError as e:
 
 
 class Tile:
-    def __init__(self, frames, animtimer=0, background=None):
+    def __init__(self, frames, background=None):
         self.frames = frames
-        self.animtimer = animtimer
         self.background = background
 
     def setBackground(self, background):
@@ -129,18 +129,17 @@ class Tile:
     def appendframe(self, frame):
         self.frames.append(frame)
 
-    def update(self):
-        self.animtimer += 1
-        if self.animtimer >= len(self.frames):
-            self.animtimer = 0
-
-    def draw(self, canvas, x, y):
+    def draw(self, canvas, animtimer, x, y):
         location = (int(x), int(y))
         # paste the background onto the canvas at location x, y
         if self.background is not None:
             canvas.paste(self.background, location)
         # paste the frame on top of the background
-        canvas.paste(self.frames[self.animtimer], location, self.frames[self.animtimer])
+        if animtimer > len(self.frames) - 1:
+            a = 0
+        else:
+            a = animtimer
+        canvas.paste(self.frames[a], location, self.frames[a])
 
 
 miters_status = False  # True = open, false = closed
@@ -170,7 +169,7 @@ class Miters_Tile(Tile):
     def __init__(self, frames, background=None):
         Tile.__init__(self, frames, background)
 
-    def draw(self, canvas, x, y):
+    def draw(self, canvas, animtimer, x, y):
         if self.background is not None:
             canvas.paste(self.background, (int(x), int(y)))
         if miters_status:
@@ -185,6 +184,7 @@ class Miters_Tile(Tile):
 class TileGrid:
     def __init__(self):
         self.startcoord = [0, 0]
+        self.animtimer = 0
         self.tiles = [
             [
                 createTile(),
@@ -202,47 +202,46 @@ class TileGrid:
         # go through all of the tiles in self.tiles and draw them on the canvas
         for y in range(3):
             self.tiles[0][y].draw(
-                canvas, self.startcoord[0], self.startcoord[1] + y * 100
+                canvas, self.animtimer, self.startcoord[0], self.startcoord[1] + y * 100
             )
             self.tiles[1][y].draw(
-                canvas, self.startcoord[0] + 100, self.startcoord[1] + y * 100
+                canvas,
+                self.animtimer,
+                self.startcoord[0] + 100,
+                self.startcoord[1] + y * 100,
             )
 
     def update(self):
         self.startcoord[0] += MOVEX
         self.startcoord[1] += MOVEY
 
-        for x in range(2):
-            for y in range(3):
-                self.tiles[x][y].update()
+        self.animtimer += 1
+        if self.animtimer >= 30:
+            self.animtimer = 0
 
         if self.startcoord[0] <= -100:  # x is offscreen, shift everything left
             self.startcoord[0] = 0
             for y in range(3):
-                t = self.tiles[1][y].animtimer
                 self.tiles[0][y] = self.tiles[1][y]
-                self.tiles[1][y] = createTile(t)
+                self.tiles[1][y] = createTile()
         elif self.startcoord[0] >= 0:  # x is offscreen, shift everything right
             self.startcoord[0] = -100
             for y in range(3):
-                t = self.tiles[0][y].animtimer
                 self.tiles[1][y] = self.tiles[0][y]
-                self.tiles[0][y] = createTile(t)
+                self.tiles[0][y] = createTile()
 
         if self.startcoord[1] <= -100:  # y is offscreen, shift everything up
             self.startcoord[1] = 0
             for x in range(2):
-                t = self.tiles[x][2].animtimer
                 self.tiles[x][0] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][2]
-                self.tiles[x][2] = createTile(t)
+                self.tiles[x][2] = createTile()
         elif self.startcoord[1] >= 0:  # y is offscreen, shift everything down
             self.startcoord[1] = -100
             for x in range(2):
-                t = self.tiles[x][0].animtimer
                 self.tiles[x][2] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][0]
-                self.tiles[x][0] = createTile(t)
+                self.tiles[x][0] = createTile()
 
 
 # import a GIF image
@@ -329,7 +328,7 @@ miters_frames = [Image.open("open.png", "r"), Image.open("closed.png", "r")]
 go_to_bed = Image.open("GoToBed.png", "r")
 
 
-def createTile(animtimer=0):
+def createTile():
     r = random.random()
     t = time.localtime()
     # choose a random background from backgrounds
@@ -347,7 +346,7 @@ def createTile(animtimer=0):
         return Miters_Tile(miters_frames, background)
     else:
         i = random.randint(0, len(frames) - 1)
-        return Tile(frames[i], animtimer, background)
+        return Tile(frames[i], background)
 
 
 # source is a PIL image WIDTH by HEIGHT, dest is a PIL image 32 by 576 (32*18)
