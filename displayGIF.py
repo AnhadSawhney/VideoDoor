@@ -1,8 +1,8 @@
 import sys
 
-TK_GUI = True
+TK_GUI = False
 GPIO = False
-USE_MATRIX = False
+USE_MATRIX = True
 EMULATE = False
 
 WIDTH = 96
@@ -118,9 +118,9 @@ except tweepy.TweepError as e:
 
 
 class Tile:
-    def __init__(self, frames, background=None):
+    def __init__(self, frames, animtimer=0, background=None):
         self.frames = frames
-        self.animtimer = 0
+        self.animtimer = animtimer
         self.background = background
 
     def setBackground(self, background):
@@ -219,26 +219,30 @@ class TileGrid:
         if self.startcoord[0] <= -100:  # x is offscreen, shift everything left
             self.startcoord[0] = 0
             for y in range(3):
+                t = self.tiles[1][y].animtimer
                 self.tiles[0][y] = self.tiles[1][y]
-                self.tiles[1][y] = createTile()
+                self.tiles[1][y] = createTile(t)
         elif self.startcoord[0] >= 0:  # x is offscreen, shift everything right
             self.startcoord[0] = -100
             for y in range(3):
+                t = self.tiles[0][y].animtimer
                 self.tiles[1][y] = self.tiles[0][y]
-                self.tiles[0][y] = createTile()
+                self.tiles[0][y] = createTile(t)
 
         if self.startcoord[1] <= -100:  # y is offscreen, shift everything up
             self.startcoord[1] = 0
             for x in range(2):
+                t = self.tiles[x][2].animtimer
                 self.tiles[x][0] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][2]
-                self.tiles[x][2] = createTile()
+                self.tiles[x][2] = createTile(t)
         elif self.startcoord[1] >= 0:  # y is offscreen, shift everything down
             self.startcoord[1] = -100
             for x in range(2):
+                t = self.tiles[x][0].animtimer
                 self.tiles[x][2] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][0]
-                self.tiles[x][0] = createTile()
+                self.tiles[x][0] = createTile(t)
 
 
 # import a GIF image
@@ -325,7 +329,7 @@ miters_frames = [Image.open("open.png", "r"), Image.open("closed.png", "r")]
 go_to_bed = Image.open("GoToBed.png", "r")
 
 
-def createTile():
+def createTile(animtimer=0):
     r = random.random()
     t = time.localtime()
     # choose a random background from backgrounds
@@ -343,7 +347,7 @@ def createTile():
         return Miters_Tile(miters_frames, background)
     else:
         i = random.randint(0, len(frames) - 1)
-        return Tile(frames[i], background)
+        return Tile(frames[i], animtimer, background)
 
 
 # source is a PIL image WIDTH by HEIGHT, dest is a PIL image 32 by 576 (32*18)
