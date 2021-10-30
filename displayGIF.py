@@ -19,7 +19,8 @@ import random
 from threading import Timer
 import tweepy
 import signal
-import keyboard
+
+# import keyboard
 
 if USE_MATRIX:
     if EMULATE:
@@ -219,6 +220,11 @@ class TileGrid:
             for y in range(3):
                 self.tiles[0][y] = self.tiles[1][y]
                 self.tiles[1][y] = createTile()
+        elif self.startcoord[0] >= 0:  # x is offscreen, shift everything right
+            self.startcoord[0] = -100
+            for y in range(3):
+                self.tiles[1][y] = self.tiles[0][y]
+                self.tiles[0][y] = createTile()
 
         if self.startcoord[1] <= -100:  # y is offscreen, shift everything up
             self.startcoord[1] = 0
@@ -226,6 +232,12 @@ class TileGrid:
                 self.tiles[x][0] = self.tiles[x][1]
                 self.tiles[x][1] = self.tiles[x][2]
                 self.tiles[x][2] = createTile()
+        elif self.startcoord[1] >= 0:  # y is offscreen, shift everything down
+            self.startcoord[1] = -100
+            for x in range(2):
+                self.tiles[x][2] = self.tiles[x][1]
+                self.tiles[x][1] = self.tiles[x][0]
+                self.tiles[x][0] = createTile()
 
 
 # import a GIF image
@@ -400,11 +412,11 @@ def stop():
     miters_thread.cancel()
     global outer_loop
     outer_loop = False
-    keyboard.unhook_all()
+    # keyboard.unhook_all()
     # sys.exit(0)
 
 
-keyboard.on_press_key("esc", lambda _: stop())
+# keyboard.on_press_key("esc", lambda _: stop())
 
 print("Entering main loop")
 while outer_loop:
@@ -429,8 +441,8 @@ while outer_loop:
             double_buffer = matrix.SwapOnVSync(double_buffer)
 
         if TK_GUI and keep_running:
-            # i = ImageTk.PhotoImage(image)
-            i = ImageTk.PhotoImage(matrixImage)
+            i = ImageTk.PhotoImage(image)
+            # i = ImageTk.PhotoImage(matrixImage)
             lbl.configure(image=i)
             lbl.image = i
             root.update()
