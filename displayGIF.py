@@ -16,9 +16,10 @@ if TK_GUI:
 from PIL import Image
 import time
 import random
-import threading
+from threading import Timer
 import tweepy
 import signal
+import keyboard
 
 if USE_MATRIX:
     if EMULATE:
@@ -151,11 +152,15 @@ def check_miters():
     t = latest_tweets[0].text
     print(t)
     miters_status = "open" in t
-    miters_thread = threading.Timer(MITERS_CHECK_DELAY_SEC, check_miters)
-    miters_thread.start()
 
 
-miters_thread = threading.Timer(0, check_miters)  # check first without delay
+class RepeatTimer(Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
+
+
+miters_thread = RepeatTimer(MITERS_CHECK_DELAY_SEC, check_miters)
 miters_thread.start()
 
 # create a subclass of Tile called Miters_Tile
@@ -369,6 +374,8 @@ if TK_GUI:
     root.title("Blue Ball Machine")
 
     def on_closing():
+        root.quit()
+        root.destroy()
         stop()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
@@ -385,19 +392,19 @@ outer_loop = True
 
 def stop():
     print("Shutting down")
-    if TK_GUI:
-        root.destroy()
-        root.quit()
-        global keep_running
-        keep_running = False
+    global keep_running
+    keep_running = False
     if GPIO:
         signal_handler()
 
     miters_thread.cancel()
     global outer_loop
     outer_loop = False
+    keyboard.unhook_all()
     # sys.exit(0)
 
+
+keyboard.on_press_key("esc", lambda _: stop())
 
 print("Entering main loop")
 while outer_loop:
@@ -435,5 +442,3 @@ while outer_loop:
             time.sleep(DELAY - dt)
         if stop_after > 0 and end > stop_after:
             keep_running = False
-
-stop()
