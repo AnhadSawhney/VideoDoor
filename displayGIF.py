@@ -1,3 +1,5 @@
+import sys
+
 TK_GUI = True
 GPIO = False
 USE_MATRIX = False
@@ -8,7 +10,8 @@ if TK_GUI:
         from Tkinter import *
     except ImportError:
         from tkinter import *
-from PIL import Image, ImageTk
+    from PIL import ImageTk
+from PIL import Image
 import time
 import random
 
@@ -19,6 +22,7 @@ if USE_MATRIX:
     if EMULATE:
         from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
     else:
+        sys.path.append("/home/rpi-rgb-led-matrix/bindings/python")
         from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
     # Configuration for the matrix
