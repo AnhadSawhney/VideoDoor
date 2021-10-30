@@ -1,5 +1,3 @@
-# TODO: check MITERS status in a different thread
-
 import sys
 
 TK_GUI = False
@@ -55,6 +53,7 @@ if USE_MATRIX:
     options.gpio_slowdown = 2
     options.scan_mode = 1
     options.show_refresh_rate = False  # True
+    options.pwm_lsb_nanoseconds = 50
 
     matrix = RGBMatrix(options=options)
     double_buffer = matrix.CreateFrameCanvas()
@@ -353,17 +352,12 @@ def remapImage(source, dest):
     # each element of the array is the filling order index. negative means rotate image 180
     # each element in fillingorder represents a 32x32 chunk of the image
 
-    # 0  -3  4
-    # 1  -2  5
-    # 10 -9  6
-    # 11 -8  7
-    # 12 -15 16
-    # 13 -14 17
+    # Do not change this
 
     fillingOrder = [
-        [1, 11, 0, 10, 13, 12],
-        [-2, -3, -8, -9, -14, -15],
-        [5, 4, 6, 17, 7, 16],
+        [13, 12, 11, 10, 1, 0],
+        [-14, -15, -8, -9, -2, -3],
+        [17, 16, 7, 6, 5, 4],
     ]
 
     # traverse through each element in fillingOrder
@@ -420,7 +414,7 @@ def stop():
 
 # keyboard.on_press_key("esc", lambda _: stop())
 
-testImage = Image.open("test.png", "r")
+# testImage = Image.open("test.png", "r")
 
 print("Entering main loop")
 while outer_loop:
@@ -437,8 +431,8 @@ while outer_loop:
         t.update()
 
         # image.show()
-        remapImage(testImage, matrixImage)
-        # remapImage(image, matrixImage)
+        # remapImage(testImage, matrixImage)
+        remapImage(image, matrixImage)
 
         if USE_MATRIX:
             double_buffer.SetImage(matrixImage)
