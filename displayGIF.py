@@ -2,9 +2,9 @@
 
 import sys
 
-TK_GUI = True
+TK_GUI = False
 GPIO = False
-USE_MATRIX = False
+USE_MATRIX = True
 EMULATE = False
 
 if TK_GUI:
@@ -44,6 +44,7 @@ if USE_MATRIX:
     options.brightness = 25
     options.gpio_slowdown = 2
     options.scan_mode = 1
+    options.show_refresh_rate = True
 
     matrix = RGBMatrix(options=options)
     double_buffer = matrix.CreateFrameCanvas()
@@ -201,8 +202,8 @@ class TileGrid:
                 )
 
     def update(self):
-        self.startcoord[0] -= 1
-        self.startcoord[1] -= 0.1
+        self.startcoord[0] += 1
+        self.startcoord[1] += 0.1
 
         for x in range(2):
             for y in range(3):
@@ -341,9 +342,9 @@ def remapImage(source, dest):
     # 13 -14 17
 
     fillingOrder = [
-        [0, 1, 10, 11, 12, 13],
-        [-3, -2, -9, -8, -15, -14],
-        [4, 5, 6, 7, 16, 17],
+        [1, 0, 11, 10, 13, 12],
+        [-2, -3, -8, -9, -14, -15],
+        [5, 4, 6, 17, 7, 16],
     ]
 
     # traverse through each element in fillingOrder
@@ -434,3 +435,5 @@ while outer_loop:
             time.sleep(DELAY - dt)
         if stop_after > 0 and end > stop_after:
             keep_running = False
+
+stop()
