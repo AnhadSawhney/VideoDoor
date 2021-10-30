@@ -7,6 +7,14 @@ GPIO = False
 USE_MATRIX = True
 EMULATE = False
 
+WIDTH = 96
+HEIGHT = 192
+DELAY = 1 / 18
+STOP_AFTER_DELAY = 30
+MITERS_CHECK_DELAY_SEC = 5 * 60
+MOVEX = 0.5
+MOVEY = 0.1
+
 if TK_GUI:
     try:
         from Tkinter import *
@@ -46,7 +54,7 @@ if USE_MATRIX:
     options.brightness = 25
     options.gpio_slowdown = 2
     options.scan_mode = 1
-    options.show_refresh_rate = True
+    options.show_refresh_rate = False  # True
 
     matrix = RGBMatrix(options=options)
     double_buffer = matrix.CreateFrameCanvas()
@@ -74,12 +82,6 @@ if GPIO:
 
     GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
     signal.signal(signal.SIGINT, signal_handler)
-
-WIDTH = 96
-HEIGHT = 192
-DELAY = 1 / 18
-STOP_AFTER_DELAY = 30
-MITERS_CHECK_DELAY_SEC = 5 * 60
 
 # seed random number generator with current time
 random.seed(time.time())
@@ -208,8 +210,8 @@ class TileGrid:
                 )
 
     def update(self):
-        self.startcoord[0] += 1
-        self.startcoord[1] += 0.1
+        self.startcoord[0] += MOVEX
+        self.startcoord[1] += MOVEY
 
         for x in range(2):
             for y in range(3):
@@ -359,7 +361,7 @@ def remapImage(source, dest):
     # 13 -14 17
 
     fillingOrder = [
-        [1, 0, 11, 10, 13, 12],
+        [1, 11, 0, 10, 13, 12],
         [-2, -3, -8, -9, -14, -15],
         [5, 4, 6, 17, 7, 16],
     ]
