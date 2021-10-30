@@ -39,13 +39,14 @@ if USE_MATRIX:
     options.hardware_mapping = "adafruit-hat-pwm"
     # custom pixel mapper must be written
     # options.pixel_mapper_config = "V-mapper:Z"
-    options.pwm_bits = 7
+    options.pwm_bits = 11
     options.pwm_dither_bits = 2
-    options.brightness = 30
+    options.brightness = 25
     options.gpio_slowdown = 2
     options.scan_mode = 1
 
     matrix = RGBMatrix(options=options)
+    double_buffer = matrix.CreateFrameCanvas()
 
 if GPIO:
     import RPi.GPIO as GPIO
@@ -348,12 +349,9 @@ def remapImage(source, dest):
             box = (x * 32, y * 32, (x + 1) * 32, (y + 1) * 32)
             toadd = source.crop(box)
             if i < 0:
-                toadd = toadd.rotate(90)
-                i = -i
+                dest.paste(toadd.rotate(90), (-i * 32, 0))
             else:
-                toadd = toadd.rotate(-90)
-
-            dest.paste(source.crop(box), (i * 32, 0))
+                dest.paste(toadd.rotate(-90), (i * 32, 0))
 
 
 # this is the image that eventually gets drawn to the matrix
@@ -382,7 +380,7 @@ t = TileGrid()
 print("Entering main loop")
 while True:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    matrixImage = Image.new("RGB", (WIDTH * 6, HEIGHT // 6), (0, 0, 0))
+    matrixImage = Image.new("RGB", (32, 32 * 18), (0, 0, 0))
     if USE_MATRIX:
         matrix.Clear()
 
@@ -398,7 +396,8 @@ while True:
         remapImage(image, matrixImage)
 
         if USE_MATRIX:
-            matrix.SetImage(matrixImage)
+            double_buffer.SetImage(matrixImage)
+            double_buffer = matrix.SwapOnVSync(double_buffer)
 
         if TK_GUI and keep_running:
             # i = ImageTk.PhotoImage(image)
