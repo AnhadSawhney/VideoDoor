@@ -1,5 +1,6 @@
 TK_GUI = True
 GPIO = False
+USE_MATRIX = False
 EMULATE = True
 
 if TK_GUI:
@@ -14,10 +15,29 @@ import random
 import tweepy
 import signal
 
-if EMULATE:
-    from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
-else:
-    from rgbmatrix import RGBMatrix, RGBMatrixOptions
+if USE_MATRIX:
+    if EMULATE:
+        from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
+    else:
+        from rgbmatrix import RGBMatrix, RGBMatrixOptions
+
+    # Configuration for the matrix
+    options = RGBMatrixOptions()
+    options.rows = 32
+    options.cols = 32  # 64
+    options.chain_length = 18  # 9
+    options.multiplexing = 2  # weird wiring setup
+    options.parallel = 1
+    options.hardware_mapping = "adafruit-hat-pwm"
+    # custom pixel mapper must be written
+    options.pixel_mapper_config = "Vmapper:Z"
+    options.pwm_bits = 7
+    options.pwm_dither_bits = 2
+    options.brightness = 25
+    options.gpio_slowdown = 2
+    options.limit_refresh_rate = 60
+
+    matrix = RGBMatrix(options=options)
 
 if GPIO:
     import RPi.GPIO as GPIO
@@ -56,16 +76,6 @@ if GPIO:
     stop_after = time.time() + 30
 else:
     stop_after = 0
-
-# Configuration for the matrix
-options = RGBMatrixOptions()
-options.rows = 32
-options.chain_length = 9
-options.parallel = 1
-options.hardware_mapping = "adafruit-hat"  # If you have an Adafruit HAT: 'adafruit-hat'
-options.pixel_mapper_config = "Vmapper:Z"
-
-matrix = RGBMatrix(options=options)
 
 # init twitter API
 # read consumer API key, API key secret, Access token, Access token secret from tokens.txt
@@ -304,6 +314,38 @@ def createTile():
         return Tile(frames[i], background)
 
 
+# source is a PIL image WIDTH by HEIGHT, dest is a PIL image 32 by 1152 (32*18)
+# split source into 32 by 32 chunks and paste each chunk sequentially into dest
+def remapImage(source, dest):
+    # each element of the array is the filling order index. negative means rotate image 180
+    # each element in fillingorder represents a 32x32 chunk of the image
+
+    # 0  -3  4
+    # 1  -2  5
+    # 10 -9  6
+    # 11 -8  7
+    # 12 -15 16
+    # 13 -14 17
+
+    fillingOrder = [
+        [0, 1, 10, 11, 12, 13],
+        [-3, -2, -9, -8, -15, -14],
+        [4, 5, 6, 7, 16, 17],
+    ]
+
+    # traverse through each element in fillingOrder
+    for x in range(3):
+        for y in range(6):
+            i = fillingOrder[x][y]
+            box = (x * 32, y * 32, (x + 1) * 32, (y + 1) * 32)
+            toadd = source.crop(box)
+            if i < 0:
+                toadd = toadd.rotate(180)
+                i = -i
+
+            dest.paste(source.crop(box), (i * 32, 0))
+
+
 # this is the image that eventually gets drawn to the matrix
 image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 
@@ -328,8 +370,10 @@ t = TileGrid()
 
 while True:
     image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    matrixImage = Image.new("RGB", (WIDTH * 3, HEIGHT // 3), (0, 0, 0))
-    matrix.Clear()
+    matrixImage = Image.new("RGB", (WIDTH * 6, HEIGHT // 6), (0, 0, 0))
+    if USE_MATRIX:
+        matrix.Clear()
+
     while keep_running:
         # measure the time that the main loop took to complete
         start = time.time()
@@ -339,14 +383,14 @@ while True:
 
         # image.show()
 
-        matrixImage.paste(image, (0, 0))
-        matrixImage.paste(image, (WIDTH, -HEIGHT // 3))
-        matrixImage.paste(image, (WIDTH * 2, -2 * HEIGHT // 3))
+        remapImage(image, matrixImage)
 
-        matrix.SetImage(matrixImage)
+        if USE_MATRIX:
+            matrix.SetImage(matrixImage)
 
         if TK_GUI and keep_running:
-            i = ImageTk.PhotoImage(image)
+            # i = ImageTk.PhotoImage(image)
+            i = ImageTk.PhotoImage(matrixImage)
             lbl.configure(image=i)
             lbl.image = i
             root.update()
