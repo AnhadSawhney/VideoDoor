@@ -426,46 +426,51 @@ image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
 matrixImage = Image.new("RGB", (32 * 18, 32), (0, 0, 0))
 
 print("Entering main loop")
-while outer_loop:
-    if USE_MATRIX:
-        matrix.Clear()
-
-    # read the PIR pin gpio
-    # print HIGH if it is high and LOW if it is LOW
-    if GPIO.input(PIR_PIN):
-        print("PIR HIGH")
-    else:
-        print("PIR LOW")
-
-    time.sleep(1)
-
-    while keep_running:
-        # measure the time that the main loop took to complete
-        start = time.time()
-
-        t.draw(image)
-        t.update()
-
-        # image.show()
-        # remapImage(testImage, matrixImage)
-        remapImage(image, matrixImage)
-
+try:
+    while outer_loop:
         if USE_MATRIX:
-            double_buffer.SetImage(matrixImage)
-            double_buffer = matrix.SwapOnVSync(double_buffer)
+            matrix.Clear()
 
-        if TK_GUI and keep_running:
-            i = ImageTk.PhotoImage(image)
-            # i = ImageTk.PhotoImage(matrixImage)
-            lbl.configure(image=i)
-            lbl.image = i
-            root.update()
+        # read the PIR pin gpio
+        # print HIGH if it is high and LOW if it is LOW
+        if GPIO.input(PIR_PIN):
+            print("PIR HIGH")
+        else:
+            print("PIR LOW")
 
-        # measure the time that the main loop took to complete
-        end = time.time()
-        dt = end - start
-        if dt < DELAY:
-            time.sleep(DELAY - dt)
-        if stop_after > 0 and end > stop_after:
-            print("Timeout ran out. Stopping rendering")
-            keep_running = False
+        time.sleep(1)
+
+        while keep_running:
+            # measure the time that the main loop took to complete
+            start = time.time()
+
+            t.draw(image)
+            t.update()
+
+            # image.show()
+            # remapImage(testImage, matrixImage)
+            remapImage(image, matrixImage)
+
+            if USE_MATRIX:
+                double_buffer.SetImage(matrixImage)
+                double_buffer = matrix.SwapOnVSync(double_buffer)
+
+            if TK_GUI and keep_running:
+                i = ImageTk.PhotoImage(image)
+                # i = ImageTk.PhotoImage(matrixImage)
+                lbl.configure(image=i)
+                lbl.image = i
+                root.update()
+
+            # measure the time that the main loop took to complete
+            end = time.time()
+            dt = end - start
+            if dt < DELAY:
+                time.sleep(DELAY - dt)
+            if stop_after > 0 and end > stop_after:
+                print("Timeout ran out. Stopping rendering")
+                keep_running = False
+except KeyboardInterrupt:
+    pass
+finally:
+    stop()
