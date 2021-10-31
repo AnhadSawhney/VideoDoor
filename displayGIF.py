@@ -1,4 +1,8 @@
 import sys
+import os
+
+# append current directory to sys.path
+sys.path.append(os.getcwd())
 
 TK_GUI = False
 GPIO = True
