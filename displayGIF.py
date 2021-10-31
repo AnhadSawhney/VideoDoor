@@ -1,7 +1,7 @@
 import sys
 
 TK_GUI = False
-GPIO = False
+GPIO = True
 USE_MATRIX = True
 EMULATE = False
 
@@ -55,16 +55,17 @@ if USE_MATRIX:
     options.show_refresh_rate = False  # True
     options.pwm_lsb_nanoseconds = 50
     options.limit_refresh_rate_hz = 90
+    options.drop_privileges = False
 
     matrix = RGBMatrix(options=options)
     double_buffer = matrix.CreateFrameCanvas()
 
-if GPIO:
+if GPIO and USE_MATRIX and not EMULATE:  # only works on raspberry pi
     import RPi.GPIO as GPIO
 
     print("Initializing GPIO")
 
-    PIR_PIN = 17
+    PIR_PIN = 24
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(PIR_PIN, GPIO.IN)  # Read output from PIR motion sensor
