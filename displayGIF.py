@@ -77,8 +77,10 @@ if GPIO and USE_MATRIX and not EMULATE:  # only works on raspberry pi
         global keep_running, stop_after
         keep_running = True
         if GPIO.input(PIR_PIN):  # rising edge
+            print("PIR triggered, rising edge")
             stop_after = 0  # stay on permanently
         else:  # falling edge
+            print("PIR triggered, falling edge")
             stop_after = time.time() + STOP_AFTER_DELAY  # stop after 30 seconds
 
     GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
