@@ -2,7 +2,7 @@ import sys
 import os
 
 # append current directory to sys.path
-sys.path.append(os.getcwd())
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 TK_GUI = False
 GPIO = True
