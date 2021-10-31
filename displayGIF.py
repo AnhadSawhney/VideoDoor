@@ -84,7 +84,6 @@ if GPIO and USE_MATRIX and not EMULATE:  # only works on raspberry pi
             stop_after = time.time() + STOP_AFTER_DELAY  # stop after 30 seconds
 
     GPIO.add_event_detect(PIR_PIN, GPIO.BOTH, callback=PIR_Callback, bouncetime=100)
-    signal.signal(signal.SIGINT, signal_handler)
 
 # seed random number generator with current time
 random.seed(time.time())

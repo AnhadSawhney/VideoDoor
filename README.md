@@ -23,6 +23,10 @@ Some_Folder
 └── rpi-rb-led-matrix
 ```
 
+Hardware:
+Adafruit LED Matrix Shield with PWM Mod
+PIR sensor wired to BCM Pin 24
+
 Running:
 `python3 displayGIF.py`
 
