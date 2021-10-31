@@ -437,6 +437,8 @@ while outer_loop:
     else:
         print("PIR LOW")
 
+    time.sleep(1)
+
     while keep_running:
         # measure the time that the main loop took to complete
         start = time.time()
