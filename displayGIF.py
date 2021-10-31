@@ -432,12 +432,14 @@ try:
 
         # read the PIR pin gpio
         # print HIGH if it is high and LOW if it is LOW
-        if GPIO.input(PIR_PIN):
-            print("PIR HIGH")
-        else:
-            print("PIR LOW")
+        # if GPIO.input(PIR_PIN):
+        #    print("PIR HIGH")
+        # else:
+        #    print("PIR LOW")
 
-        time.sleep(1)
+        # don't wait if its time to start up again
+        if not keep_running:
+            time.sleep(1)
 
         while keep_running:
             # measure the time that the main loop took to complete

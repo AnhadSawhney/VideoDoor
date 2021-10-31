@@ -23,6 +23,10 @@ Some_Folder
 └── rpi-rb-led-matrix
 ```
 
+Running at boot:
+Open root's crontab with `sudo crontab -e`
+Put this in `@reboot cd /home/VideoDoor && python3 displayGIF.py >> /var/log/mail.log 2>&1`
+
 Hardware:
 Adafruit LED Matrix Shield with PWM Mod
 PIR sensor wired to BCM Pin 24
