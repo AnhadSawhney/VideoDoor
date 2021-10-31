@@ -14,15 +14,20 @@ def setupPins():
         except:
             print("Bad pin: " + str(i))
 
+    for i in range(1, 40):
+        print(i, end=" ")
+    print("")
+
 
 # go through every pin and print the pin number and the value
 # if an exception is caught, ignore it
 def scanPins():
     for i in range(1, 40):
         try:
-            print("Pin: " + str(i) + " Value: " + str(GPIO.input(i)))
+            print(GPIO.input(i), end=" ")
         except:
-            pass
+            print("x ")
+    print("")
 
 
 setupPins()
