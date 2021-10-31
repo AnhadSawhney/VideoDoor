@@ -4,7 +4,7 @@ import time
 # try and set every GPIO pin to input
 # if an exception is caught, print the pin number
 
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 
 
 def setupPins():
@@ -26,7 +26,7 @@ def scanPins():
         try:
             print(GPIO.input(i), end=" ")
         except:
-            print("x ")
+            print("x ", end=""
     print("")
 
 

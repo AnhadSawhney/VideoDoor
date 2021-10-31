@@ -66,8 +66,8 @@ if GPIO and USE_MATRIX and not EMULATE:  # only works on raspberry pi
     print("Initializing GPIO")
 
     PIR_PIN = 24
-    #GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)
+    # GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(PIR_PIN, GPIO.IN)  # Read output from PIR motion sensor
 
     def signal_handler(sig, frame):
