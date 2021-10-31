@@ -28,7 +28,6 @@ import time
 import random
 from threading import Timer
 import tweepy
-import signal
 
 # import keyboard
 
@@ -73,9 +72,6 @@ if GPIO and USE_MATRIX and not EMULATE:  # only works on raspberry pi
     # GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(PIR_PIN, GPIO.IN)  # Read output from PIR motion sensor
-
-    def signal_handler(sig, frame):
-        GPIO.cleanup()
 
     def PIR_Callback(channel):
         global keep_running, stop_after
@@ -413,7 +409,7 @@ def stop():
     global keep_running
     keep_running = False
     if GPIO:
-        signal_handler()
+        GPIO.cleanup()
 
     miters_thread.cancel()
     global outer_loop
