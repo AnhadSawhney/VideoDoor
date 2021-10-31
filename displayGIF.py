@@ -422,12 +422,20 @@ def stop():
 
 # testImage = Image.open("test.png", "r")
 
+image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+matrixImage = Image.new("RGB", (32 * 18, 32), (0, 0, 0))
+
 print("Entering main loop")
 while outer_loop:
-    image = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
-    matrixImage = Image.new("RGB", (32 * 18, 32), (0, 0, 0))
     if USE_MATRIX:
         matrix.Clear()
+
+    # read the PIR pin gpio
+    # print HIGH if it is high and LOW if it is LOW
+    if GPIO.input(PIR_PIN):
+        print("PIR HIGH")
+    else:
+        print("PIR LOW")
 
     while keep_running:
         # measure the time that the main loop took to complete
@@ -457,4 +465,5 @@ while outer_loop:
         if dt < DELAY:
             time.sleep(DELAY - dt)
         if stop_after > 0 and end > stop_after:
+            print("Timeout ran out. Stopping rendering")
             keep_running = False
